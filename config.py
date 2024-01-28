@@ -1,0 +1,5 @@
+host: str = "localhost"
+user: str = "db_user_name"
+password: str = "pass"
+charset: str = "utf8"
+database: str = "database_name"

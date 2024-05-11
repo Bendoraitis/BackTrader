@@ -1,3 +1,7 @@
+import numpy as np
+import keras
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 import download_data
 from strategy.buy_trades_high_level.main import buy_trades_high_level
 from strategy.average_true_range.main import average_true_range
@@ -15,10 +19,11 @@ import pandas as pd
 
 start_time = time.time()
 
+data_file = download_data.get_merged_coin_data_file("BTCUSDT", '1s', '2024-05-07', '2024-05-10')
 
-data_file = download_data.get_merged_coin_data_file("BTCUSDT", '2017-08-17', '2024-04-15')
 # strategy run
 # average_true_range(data_file, 601, 601)
+# buy_trades_high_level_long_time(data_file)
 
 
 print("\n--- %s seconds ---" % (time.time() - start_time))

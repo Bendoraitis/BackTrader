@@ -8,7 +8,7 @@ from datetime import date
 import datetime
 
 
-def get_coin_data_file(coin="BTCUSDT", coin_date="2017-08-18"):
+def get_coin_data_file(coin="BTCUSDT", interval='1s', coin_date="2017-08-18"):
     """
     https://binance-docs.github.io/apidocs/spot/en/#compressed-aggregate-trades-list
 
@@ -34,8 +34,8 @@ def get_coin_data_file(coin="BTCUSDT", coin_date="2017-08-18"):
     ]
     """
 
-    path = "data/" + coin
-    file_name = coin + "-1s-" + coin_date  #
+    path = "data/" + coin + "-" + interval
+    file_name = coin + "-" + interval + "-" + coin_date  #
 
     if not os.path.exists(path):
         os.mkdir(path)
@@ -45,7 +45,7 @@ def get_coin_data_file(coin="BTCUSDT", coin_date="2017-08-18"):
         open(path + "/" + file_name + ".csv")
         return f"File exists in {path}/{file_name}.csv"
     except FileNotFoundError:
-        url = "https://data.binance.vision/data/spot/daily/klines/" + coin + "/1s/" + file_name + ".zip"
+        url = "https://data.binance.vision/data/spot/daily/klines/" + coin + "/" + interval + "/" + file_name + ".zip"
         file = requests.get(url, stream=True)
 
         if file.status_code == 200:
@@ -62,15 +62,16 @@ def get_coin_data_file(coin="BTCUSDT", coin_date="2017-08-18"):
             return f"No such file in cloud: {url}"
 
 
-def insert_coin_data_to_db(coin="BTCUSDT", coin_date="2017-08-18"):
+def insert_coin_data_to_db(coin="BTCUSDT", interval="1s", coin_date="2017-08-18"):
     """
     Loading coin data from file, removing unnecessary data and writing to database.
     Creating table if we have new coin.
     :param coin:
+    :param interval: time interval e.g "1s", "1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h" or "1d"
     :param coin_date:
     :return:
     """
-    with open(f'data/{coin}/{coin}-1s-{coin_date}.csv', "r") as coin_file:
+    with open(f'data/{coin}-{interval}/{coin}-{interval}-{coin_date}.csv', "r") as coin_file:
         file_content = list(csv.reader(coin_file))
 
     for item in file_content:
@@ -115,10 +116,11 @@ def insert_coin_data_to_db(coin="BTCUSDT", coin_date="2017-08-18"):
     con.close()
 
 
-def get_and_insert_coin_data_files(coin="BTCUSDT", beguine_date='2023-12-01', end_date='2023-12-03'):
+def get_and_insert_coin_data_files(coin="BTCUSDT", interval="1s", beguine_date='2023-12-01', end_date='2023-12-03'):
     """
     Downloading files from Binance, saving to folder as extracted file and writing to database
     :param coin: cryptocurrency pair e.g. "BTCUSDT"
+    :param interval: time interval e.g "1s", "1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h" or "1d"
     :param beguine_date:
     :param end_date:
     :return:
@@ -130,7 +132,7 @@ def get_and_insert_coin_data_files(coin="BTCUSDT", beguine_date='2023-12-01', en
 
     if beguine_date <= end_date:
         while True:
-            get_coin_data_file(coin=coin, coin_date=str(end_date))
+            get_coin_data_file(coin=coin, interval=interval, coin_date=str(end_date))
             insert_coin_data_to_db(coin=coin, coin_date=str(end_date))
             end_date -= datetime.timedelta(days=1)
             if end_date < beguine_date:
@@ -139,10 +141,11 @@ def get_and_insert_coin_data_files(coin="BTCUSDT", beguine_date='2023-12-01', en
         print("Not working, because beguine_date is grater than end_date.")
 
 
-def get_merged_coin_data_file(coin="BTCUSDT", beguine_date='2023-12-01', end_date='2023-12-03'):
+def get_merged_coin_data_file(coin="BTCUSDT", interval='1s', beguine_date='2023-12-01', end_date='2023-12-03'):
     """
     Downloading files from Binance, saving to folder as extracted file and writing to file in file e.g: data/BTCUSD/_BTCUSDT.csv
     :param coin: cryptocurrency pair e.g. "BTCUSDT"
+    :param interval: time interval e.g "1s", "1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h" or "1d"
     :param beguine_date:
     :param end_date:
     :return: file name and location e.g: data/BTCUSDT/_BTCUSDT-2023-12-22-2023-12-23.csv
@@ -154,19 +157,19 @@ def get_merged_coin_data_file(coin="BTCUSDT", beguine_date='2023-12-01', end_dat
     end_date_list = end_date.split('-')
     end_date = date(int(end_date_list[0]), int(end_date_list[1]), int(end_date_list[2]))
 
-    path = "data/" + coin
+    path = "data/" + coin + "-" + interval
     if not os.path.exists(path):
         os.mkdir(path)
 
-    result_file_name = f'data/{coin}/_{coin}-{raw_beguine_date}-{raw_end_date}.csv'
+    result_file_name = f'{path}/_{coin}-{interval}-{raw_beguine_date}-{raw_end_date}.csv'
     if not os.path.exists(result_file_name):
         with open(result_file_name, 'w') as result_file:
             writer = csv.writer(result_file)
             writer.writerow(["open_time", "open_price", "high_price", "low_price", "close_price", "close_time", "trades"])
 
             while beguine_date <= end_date:
-                get_coin_data_file(coin=coin, coin_date=str(end_date))
-                with open(f'data/{coin}/{coin}-1s-{end_date}.csv', "r") as coin_file:
+                get_coin_data_file(coin=coin, interval=interval, coin_date=str(end_date))
+                with open(f'{path}/{coin}-{interval}-{end_date}.csv', "r") as coin_file:
                     file_content = list(csv.reader(coin_file))
                     for item in file_content:
                         del item[11]

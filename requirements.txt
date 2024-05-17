@@ -1,5 +1,5 @@
 TA-Lib==0.4.28
-pandas==2.1.4
+pandas==2.2.2 #was 2.1.4
 numpy==1.26.3
 keras~=2.15.0
 matplotlib~=3.8.4

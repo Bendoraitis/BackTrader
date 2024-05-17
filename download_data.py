@@ -168,8 +168,8 @@ def get_merged_coin_data_file(coin="BTCUSDT", interval='1s', beguine_date='2023-
             writer.writerow(["open_time", "open_price", "high_price", "low_price", "close_price", "close_time", "trades"])
 
             while beguine_date <= end_date:
-                get_coin_data_file(coin=coin, interval=interval, coin_date=str(end_date))
-                with open(f'{path}/{coin}-{interval}-{end_date}.csv', "r") as coin_file:
+                get_coin_data_file(coin=coin, interval=interval, coin_date=str(beguine_date))
+                with open(f'{path}/{coin}-{interval}-{beguine_date}.csv', "r") as coin_file:
                     file_content = list(csv.reader(coin_file))
                     for item in file_content:
                         del item[11]
@@ -180,7 +180,7 @@ def get_merged_coin_data_file(coin="BTCUSDT", interval='1s', beguine_date='2023-
 
                     writer.writerows(file_content)
 
-                end_date -= datetime.timedelta(days=1)
+                beguine_date += datetime.timedelta(days=1)
                 coin_file.close()
         result_file.close()
     return result_file_name

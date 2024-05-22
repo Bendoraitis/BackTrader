@@ -23,16 +23,16 @@ start_time = time.time()
 ###############################################################################
 ######                         Load data                                 ######
 ###############################################################################
-data_file = download_data.get_merged_coin_data_file("BTCUSDT", '1m', '2023-10-15', '2023-10-21')
+data_file = download_data.get_merged_coin_data_file("BTCUSDT", '1m', '2023-10-01', '2023-10-21')
 
 
 ###############################################################################
 ######                        Strategy run                               ######
 ###############################################################################
-average_true_range(data_file, 601, 601)
-buy_trades_high_level_long_time(data_file)
-LSTM_strategy_by_day(data_file, 500, 100, 2)
-Transformer_strategy_by_day(data_file, 500, 100, 2)
+# average_true_range(data_file, 601, 601)
+# buy_trades_high_level_long_time(data_file)
+LSTM_strategy_by_day(data_file, 500, 100, 6)
+# Transformer_strategy_by_day(data_file, 500, 100, 2)
 
 print("\n--- %s seconds ---" % (time.time() - start_time))
 print("--- %s minutes ---" % ((time.time() - start_time) / 60))

@@ -14,7 +14,7 @@
 - git clone https://github.com/Bendoraitis/BackTrader
 - run main.py
 
-### Run lib install in CLI
+## Run lib install in CLI
 ```commandline
 pip install pandas==2.2.2
 pip install numpy==1.26.3
@@ -31,7 +31,24 @@ pip install tensorflow==2.15.1
 ### For Ta-Lib best manual here:
 https://medium.com/@outwalllife001/how-to-install-ta-lib-on-ubuntu-22-04-step-by-step-88ffd2507bbd 
 
-### Comment uncomment these functions:
+## How get datasets
+- use function and :
+```python
+data_file = download_data.get_merged_coin_data_file("BTCUSDT", '1m', '2023-10-01', '2023-10-21')
+"""
+    Downloading files from Binance, saving to folder as extracted file and writing to file in file e.g: data/BTCUSD/_BTCUSDT.csv
+    :param coin: cryptocurrency pair e.g. "BTCUSDT"
+    :param interval: time interval e.g "1s", "1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h" or "1d"
+    :param beguine_date:
+    :param end_date:
+    :return: file name and location e.g: data/BTCUSDT/_BTCUSDT-2023-12-22-2023-12-23.csv
+"""
+```
+- all data will be downloaded to /data directory and merged by interval to one file. If file exists before, just loading old data
+- in download_data there is few functions to use MySQL DB, but not finished, also Main project functions using files, not DB.
+- but good news that MySQL also importing automatically by bulk imports, if you want to use it, change config.py credentials 
+
+## Comment uncomment these functions to run project:
 ```python
 # this is standard trading strategy by average true range 
 average_true_range(file_name, atr_period, sma_period)
@@ -49,7 +66,7 @@ LSTM_strategy_by_day(filename, data_x_length, data_y_length, epochs)
 Transformer_strategy_by_day(filename, data_x_length, data_y_length, epochs)
 ```
 
-### If you have problems on GPU
+## If you have problems on GPU
 - check global variables, main.py line here:
 ```python
 os.environ['XLA_FLAGS'] = '--xla_gpu_cuda_data_dir=/usr/lib/cuda'
@@ -60,7 +77,7 @@ os.environ['XLA_FLAGS'] = '--xla_gpu_cuda_data_dir=/usr/lib/cuda'
 - https://developer.nvidia.com/cuda-toolkit-archive
 - https://developer.nvidia.com/cudnn
 
-### For turning off GPU uncomment this line in main.py: 
+## For turning off GPU uncomment this line in main.py: 
 ```python
 # Run just on CPU
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'

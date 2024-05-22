@@ -4,12 +4,12 @@ import numpy as np
 import matplotlib as mpl
 mpl.use('Qt5Agg')
 import matplotlib.pyplot as plt
-from keras.models import Sequential
-from keras.layers import LSTM, Dropout, Dense
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Dense, Dropout, LayerNormalization, MultiHeadAttention, GlobalAveragePooling1D
+from tensorflow.keras.optimizers import Adam
 from sklearn.preprocessing import MinMaxScaler
 
-
-def LSTM_strategy_by_day(filename, data_x_length, data_y_length, epochs):
+def Transformer_strategy_by_day(filename, data_x_length, data_y_length, epochs):
     df = pd.read_csv(filename)
 
     df['open_time'] = pd.to_datetime(df['open_time'], unit='ms')
@@ -39,23 +39,30 @@ def LSTM_strategy_by_day(filename, data_x_length, data_y_length, epochs):
         y_train_data.append(scaled_data[i:i + data_y_length, 0])
         y_test_data.append(scaled_data[i + data_x_length:i + data_x_length + data_y_length, 0])
 
-    # convert to numpy
     x_train_data, y_train_data, x_test_data, y_test_data = np.array(x_train_data), np.array(y_train_data), np.array(x_test_data), np.array(y_test_data)
 
-    # reshape it to 3D
-    x_train_data = np.reshape(x_train_data, (x_train_data.shape[0], x_train_data.shape[1], 1))
-    y_train_data = np.reshape(y_train_data, (y_train_data.shape[0], y_train_data.shape[1], 1))
-    x_test_data = np.reshape(x_test_data, (x_test_data.shape[0], x_test_data.shape[1], 1))
-    y_test_data = np.reshape(y_test_data, (y_test_data.shape[0], y_test_data.shape[1], 1))
+    def transformer_encoder(inputs, head_size, num_heads, ff_dim, dropout=0):
+        x = MultiHeadAttention(key_dim=head_size, num_heads=num_heads, dropout=dropout)(inputs, inputs)
+        x = Dropout(dropout)(x)
+        x = LayerNormalization(epsilon=1e-6)(x)
+        res = x + inputs
 
+        x = Dense(ff_dim, activation="relu")(res)
+        x = Dropout(dropout)(x)
+        x = Dense(inputs.shape[-1])(x)
+        x = LayerNormalization(epsilon=1e-6)(x)
+        return x + res
 
-    lstm_model = Sequential()
-    lstm_model.add(LSTM(units=1300, return_sequences=True, input_shape=(x_train_data.shape[1], 1)))
-    lstm_model.add(LSTM(units=500))
-    lstm_model.add(Dense(data_y_length)) #activation='sigmoid'
+    input_shape = (x_train_data.shape[1], 1)
+    inputs = Input(shape=input_shape)
+    x = transformer_encoder(inputs, head_size=256, num_heads=4, ff_dim=4, dropout=0.1)
+    x = GlobalAveragePooling1D()(x)
+    x = Dropout(0.1)(x)
+    outputs = Dense(data_y_length)(x)
 
-    lstm_model.compile(loss='mean_squared_error', optimizer='adam')
-    history = lstm_model.fit(x_train_data, y_train_data, epochs=epochs, batch_size=50, verbose=1, validation_data=(x_test_data, y_test_data))
+    transformer_model = Model(inputs, outputs)
+    transformer_model.compile(loss='mean_squared_error', optimizer=Adam(learning_rate=1e-4))
+    history = transformer_model.fit(x_train_data, y_train_data, epochs=epochs, batch_size=50, verbose=1, validation_data=(x_test_data, y_test_data))
 
     plot_learning_curves(history.history["loss"])
     plt.show()
@@ -67,29 +74,18 @@ def LSTM_strategy_by_day(filename, data_x_length, data_y_length, epochs):
     X_test = []
     X_test.append(inputs_data_transformed[0:data_x_length])
     X_test = np.array(X_test)
-    X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
-
-    predicted_open_price = lstm_model.predict(X_test)
+    predicted_open_price = transformer_model.predict(X_test)
 
     predicted_open_price = scaler.inverse_transform(predicted_open_price)
     predicted_open_price = predicted_open_price.reshape(data_y_length, 1)
 
-
-    # train_data = new_dataset[:split_value]
-    print(len(new_dataset) - data_y_length)
     valid_data = new_dataset[len(new_dataset) - data_y_length:]
 
-    # valid_data = valid_data.assign(Predictions=predicted_open_price)
-
-    # print(valid_data)
     plt.plot(new_dataset['open_price'], label="new_dataset", color='blue')
-    # plt.plot(train_data['open_price'], label="train_data", color='yellow')
-    # plt.plot(valid_data['open_price'])
-    # plt.plot(valid_data['Predictions'])
     plt.plot(valid_data.index, predicted_open_price, color='red', label="Predict price")
     plt.show()
-    plt.savefig('strategy/LSTM_by_day/chart.png')
+    plt.savefig('strategy/Transformer_by_day/chart.png')
 
 def plot_learning_curves(loss):
     plt.plot(np.arange(len(loss)) + 0.5, loss, "b.-", label="Training loss")
@@ -99,4 +95,4 @@ def plot_learning_curves(loss):
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.grid(True)
-    plt.savefig('strategy/LSTM_by_day/learning_curves.png')
+    plt.savefig('strategy/Transformer_by_day/learning_curves.png')

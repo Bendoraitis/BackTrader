@@ -32,7 +32,7 @@ pip install tensorflow==2.15.1
 https://medium.com/@outwalllife001/how-to-install-ta-lib-on-ubuntu-22-04-step-by-step-88ffd2507bbd 
 
 ## How get datasets
-- use function and :
+- use function:
 ```python
 data_file = download_data.get_merged_coin_data_file("BTCUSDT", '1m', '2023-10-01', '2023-10-21')
 """

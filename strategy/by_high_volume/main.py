@@ -29,7 +29,8 @@ class Orders:
     def set_log(self, var):
         self.log.append(var)
 
-
+# RSI 79.9 and 5 next more than 75 - buy
+# sell - SMA 25 > price
 def by_high_volume(file_name, atr_period, sma_period):
     df = pd.read_csv(file_name)
     data_frame = pd.DataFrame(df)

@@ -1,3 +1,5 @@
+from ftplib import print_line
+
 import matplotlib.pyplot as plt
 
 
@@ -7,7 +9,7 @@ def save(orders, directory, naming):
     profit_list = []
     my_balance = 500
     for item in orders:
-        my_balance += + item.profit
+        my_balance += item.profit
         profit_list.append(my_balance)
     ax.plot(profit_list)
     ax.grid()
@@ -27,5 +29,19 @@ def save(orders, directory, naming):
 
     fig.savefig(f'{directory}/{naming}.png')
 
-    print('My balance: ', int(my_balance))
+    print('My balance: ', my_balance)
     print('Orders total: ', len(orders))
+
+
+def get_naming_with_coin_and_date(naming):
+
+    # Remove up to and including the second slash
+    trimmed = naming.split('/', 2)[-1]
+
+    # Remove last 4 characters
+    result = trimmed[:-4]
+
+    print(result)
+    return result
+
+

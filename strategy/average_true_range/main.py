@@ -1,7 +1,7 @@
 import talib.abstract as ta
 import pandas as pd
 import numpy as np
-from strategy.to_files import save
+from strategy import to_files
 import os
 
 
@@ -69,6 +69,6 @@ def average_true_range(file_name, atr_period, sma_period):
             last_order.set_log(row)
 
     naming = f'first_def_atr_{atr_period}_sma_{sma_period}'
-    save(orders, os.path.dirname(os.path.abspath(__file__)), naming)
+    to_files.save(orders, os.path.dirname(os.path.abspath(__file__)), naming)
 
     return orders

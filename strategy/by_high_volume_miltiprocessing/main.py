@@ -3,11 +3,13 @@ import pandas as pd
 import numpy as np
 from strategy import to_files
 import os
+import multiprocessing
+import re
 
 
 class Orders:
     account_amount = 500
-    size_lot = 0.25 # 0.25
+    size_lot = 0.025
     broker_fee = 0.00075 * size_lot
 
     def __init__(self):
@@ -29,14 +31,12 @@ class Orders:
     def set_log(self, var):
         self.log.append(var)
 
-# RSI 79.9 and 5 next more than 75 - buy (ta.RSI)
-# sell - SMA 25 > price
-def by_high_volume(file_name):
-    df = pd.read_csv(file_name)
-    data_frame = pd.DataFrame(df)
-    rsi = ta.RSI(data_frame['close_price'], timeperiod=20)
-    sma = ta.SMA(data_frame['close_price'], period=25)
 
+def process_chunk(data_chunk):
+    data_frame = pd.DataFrame(data_chunk).reset_index(drop=True)  # 👈 Reset index
+
+    rsi = ta.RSI(data_frame['close_price'], timeperiod=20)
+    sma = ta.SMA(data_frame['close_price'], timeperiod=25)
     data_frame['rsi'] = rsi
     data_frame['sma'] = sma
 
@@ -50,13 +50,9 @@ def by_high_volume(file_name):
         if index > 0:
             stop_loss = data_frame.iloc[index - 1]['low_price'] * 0.995
         else:
-            stop_loss = 0  # No previous value for the first row
+            stop_loss = 0
 
-        # closing/editing trade
         if last_order.open_trade_price != 0 and last_order.close_trade_price == 0:
-            # last_order.set_log(row)
-
-            # closing buy order
             if stop_loss > row['close_price'] and last_order.buy_or_sell == 'buy':
                 last_order.close_trade_price = row['close_price']
                 open_fee = last_order.open_trade_price * last_order.broker_fee
@@ -67,14 +63,34 @@ def by_high_volume(file_name):
                 orders.append(ord_1)
                 last_order.set_log(row)
 
-        # opening trade (buy)
         if row['rsi'] > 70 and last_order.open_trade_price == 0:
             last_order.open_trade_price = row['close_price']
             last_order.buy_or_sell = 'buy'
             last_order.set_log(row)
 
+    return orders
+
+
+def by_high_volume_multiprocessing(file_name):
+    df = pd.read_csv(file_name)
+    cpu_count = 12  # Adjust as needed
+    chunks = np.array_split(df, cpu_count)
+
+    with multiprocessing.Pool(cpu_count) as pool:
+        all_orders_lists = pool.map(process_chunk, chunks)
+
+    # Flatten the list of lists
+    all_orders = [order for sublist in all_orders_lists for order in sublist]
+
     coin_naming = to_files.get_naming_with_coin_and_date(file_name)
     naming = f'high_volume_result{coin_naming}'
-    to_files.save(orders, os.path.dirname(os.path.abspath(__file__)), naming)
 
-    return orders
+    to_files.save(all_orders, os.path.dirname(os.path.abspath(__file__)), naming)
+
+    return all_orders
+
+
+if __name__ == "__main__":
+    # Example usage (ensure the main guard is used for multiprocessing)
+    file_path = "your_data_file.csv"
+    by_high_volume_multiprocessing(file_path)
